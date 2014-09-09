@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html>
+<head lang="en">
+    <meta charset="UTF-8">
+    <title></title>
+    <style>
+        body,html{
+            height: 100%;
+            width: 100%;
+            font: 300 1em 'segoe UI';
+        }
+
+        div#details{
+            color: white;
+            position: absolute;
+            display: none;
+            background-color: rgba(0,0,0,0.4);
+            height :  8em;
+            width : 12em;
+            z-index: 2000;
+        }
+
+        p{
+            padding-left: 0.3em;
+        }
+
+        span{
+            font-weight: bold;
+        }
+    </style>
+    <script src="libraries/jquery_min.js"></script>
+    <script src="libraries/kartograph.js"></script>
+    <script src="libraries/raphael_min.js"></script>
+    <script src="states.js"></script>
+    <script src="long_lat.js"></script>
+    <script type="text/javascript">
+
+        var states_data = states.states.state;
+        var long_lat = long_lat;
+
+        //adding the long and lat properties to each element in  the states_data array
+        states_data.map(function(elem){
+            var abbr = elem['@attributes'].abbreviation;
+            elem['@attributes'].long = long_lat[abbr].long;
+            elem['@attributes'].lat = long_lat[abbr].lat;
+        });
+
+        console.log(states_data);
+        $(function() {
+
+            var map = kartograph.map('#map');
+
+            map.loadMap('usa.svg', function() {
+
+                //layer0 is the id defined in the usa.svg file which defines the path for the whole map
+                map.addLayer('layer0', {
+                    styles: {
+                        stroke: '#aaa',
+                        fill: '#f6f4f2'
+                    },
+                    mouseenter: function(d, path) {
+
+                        path.attr('fill', Math.random() < 0.5 ? 'grey' : 'lightgrey');
+
+                        //add the fill attribute to the path element and adding a color to it
+                        //path is the svg path for that state in the map(the border)
+                    },
+                    mouseleave: function(d, path) {
+
+                        path.animate({ fill: '#f6f4f2' }, 1000);
+                    }
+                });
+
+
+
+                map.addSymbols({
+
+                    type: kartograph.LabeledBubble,
+                    //data is the array of objects
+                    data: states_data ,
+                    //location is a call back function ...which takes each object in the data array and returns the long and lat for that elem
+                    location: function(d) {
+                        return [d['@attributes'].long, d['@attributes'].lat]},
+                    //title is the call back function..which returns the capital for each elem
+                    title: function(d) { return d['@attributes'].capital; },
+                    //
+                    radius: 3,
+                    center: false,
+                    //attrs is the bubble
+                    attrs: { fill: 'black' },
+                    //labelattrs is the text that is displayed next to the bubble
+                    labelattrs: { 'font-size': 11 },
+                    buffer: true
+                });
+
+            }, { padding: 30 });
+        });
+
+    </script>
+</head>
+<body>
+
+<div id="map"></div>
+
+
+
+</body>
+</html>

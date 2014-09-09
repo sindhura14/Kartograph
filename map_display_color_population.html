@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html>
+<head lang="en">
+    <meta charset="UTF-8">
+    <title></title>
+    <style>
+        body,html{
+            height: 100%;
+            width: 100%;
+            font: 300 1em 'segoe UI';
+        }
+
+        div#details{
+            color: white;
+            position: absolute;
+            display: none;
+            background-color: rgba(0,0,0,0.4);
+            height :  8em;
+            width : 12em;
+            z-index: 2000;
+        }
+
+        p{
+            padding-left: 0.3em;
+        }
+
+        span{
+            font-weight: bold;
+        }
+    </style>
+    <script src="libraries/jquery_min.js"></script>
+    <script src="libraries/kartograph.js"></script>
+    <script src="libraries/raphael_min.js"></script>
+    <script src="states.js"></script>
+
+    <script type="text/javascript">
+        var states_data = states.states.state;
+        var states_abbr = [];
+        var population = [];
+        for(var i in states_data){
+
+            population.push(states_data[i]['@attributes'].population);
+            states_abbr.push(states_data[i]['@attributes'].abbreviation);
+        }
+
+
+        var mouse_enter;
+        var ranges = [];
+
+        var r = 255;
+        var g = 236;
+        var b = 212;
+        for(var i = 0;i<37000000 ; i+=1000000){
+           ranges.push({'range' : [i+1,i+1000000],
+        'color' : r});
+            r-=2;
+        }
+//console.log(ranges);
+
+        $(function() {
+
+            var map = kartograph.map('#map');
+
+            map.loadMap('usa.svg', function() {
+
+                //layer0 is the id defined in the usa.svg file which defines the path for the whole map
+                map.addLayer('layer0', {
+                    styles: {
+                        stroke: '#aaa',
+                        fill: '#f6f4f2'
+                    },
+                    mouseenter: function(d, path) {
+                        mouse_enter = true;
+                        var index = states_abbr.indexOf(d.key);
+                        $('#details').css('display', 'block');
+                        $('#name').html('<span>Name</span>' + ' : ' + " " + states_data[index]['@attributes'].name);
+                        $('#capital').html('<span>Capital</span>' + ' : ' + " " + states_data[index]['@attributes'].capital);
+                        $('#population').html('<span>Population</span>' + ' : ' + " " + states_data[index]['@attributes'].population);
+                        $('#map').mousemove(function(e){
+                            if(mouse_enter) {
+                                var index = states_abbr.indexOf(d.key);
+                                $('#details').css('top', e.pageY + 20 + 'px');
+                                $('#details').css('left', e.pageX + 10 + 'px');
+
+                            }
+                        });
+                        path.attr('fill',colorpick(Number(states_data[index]['@attributes'].population)));
+                        //add the fill attribute to the path element and adding a color to it
+                        //path is the svg path for that state in the map(the border)
+                         function colorpick(pop){
+                            for(var j=0 ;j<ranges.length;j++){
+                                if(ranges[j].range[0] < pop && pop < ranges[j].range[1]){
+
+                                    var color = rgbToHex(ranges[j].color,0,0);
+                                    console.log(color);
+                                }
+                            }
+                             return color;
+                        }
+                        function componentToHex(c) {
+                            var hex = c.toString(16);
+                            return hex.length == 1 ? "0" + hex : hex;
+                        }
+
+                        function rgbToHex(r, g, b) {
+                            return "#" + componentToHex(r) + componentToHex(g) + componentToHex(b);
+                        }
+                    },
+                    mouseleave: function(d, path) {
+                        mouse_enter = false;
+                        $('#details').css('display', 'none');
+                        path.animate({ fill: '#f6f4f2' }, 1000);
+                    }
+
+
+                });
+
+                var points_of_interest = [
+                    { name: 'Juneau, AK', lat: 58.3, lon: -134.416667 },
+                    { name: 'Honolulu, HI', lat: 21.3, lon: -157.816667 },
+                    { name: 'San Francisco, CA', lat: 37.783333, lon: -122.416667 }
+                ];
+
+                map.addSymbols({
+
+                    type: kartograph.LabeledBubble,
+                    //data is the array of objects
+                    data: points_of_interest ,
+                    //location is a call back function ...which takes each object in the data array and returns the long and lat for that elem
+                    location: function(d) {
+                        return [d.lon, d.lat] },
+                    //title is the call back function..which returns the name for each elem
+                    title: function(d) { return d.name; },
+                    //
+                    radius: 3,
+                    center: false,
+                    //attrs is the bubble
+                    attrs: { fill: 'black' },
+                    //labelattrs is the text that is displayed next to the bubble
+                    labelattrs: { 'font-size': 11 },
+                    buffer: true
+                });
+
+            }, { padding: 30 });
+        });
+
+    </script>
+</head>
+<body>
+<div id="details">
+    <p id="name"></p>
+    <p id="capital"></p>
+    <p id="population"></p>
+</div>
+<div id="map"></div>
+
+
+
+</body>
+</html>
